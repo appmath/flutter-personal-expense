@@ -1,0 +1,363 @@
+  animated_text_kit: ^4.2.1
+  firebase_auth: ^3.1.1
+  firebase_core: ^1.6.0
+  cloud_firestore: ^2.5.3
+  modal_progress_hud_nsn: ^0.1.0-nullsafety-1
+
+
+---------------------------------------------------------
+Provider:  provider
+app: todoey
+Usage:
+
+// *********** Add this to main
+  void main() {
+    runApp(const MyApp());
+  }
+
+  class MyApp extends StatelessWidget {
+    const MyApp({Key? key}) : super(key: key);
+
+    @override
+    Widget build(BuildContext context) {
+      return ChangeNotifierProvider(
+        create: (context) => TaskData(),
+        child: MaterialApp(
+          home: TasksScreen(),
+        ),
+      );
+    }
+  }
+
+// *********** Data class
+import 'dart:collection';
+
+import 'package:flutter/foundation.dart';
+import 'package:todoey/models/task.dart';
+
+class TaskData extends ChangeNotifier {
+  List<Task> _tasks = [
+    Task(name: 'Buy milk', isDone: true),
+    Task(name: 'Buy eggs', isDone: false),
+    Task(name: 'Buy bread', isDone: true),
+  ];
+
+  void addNewTask(Task task) {
+    _tasks.insert(0, task);
+    notifyListeners();
+  }
+
+  int get taskCount {
+    return _tasks.length;
+  }
+
+  UnmodifiableListView<Task> get tasks {
+    return UnmodifiableListView(_tasks);
+  }
+
+  void updateTask(Task task) {
+    task.toggleDone();
+    notifyListeners();
+  }
+
+  void removeTask(Task task) {
+    _tasks.remove(task);
+    notifyListeners();
+  }
+}
+
+// *********** Updater and listeners
+ onPressed: () => {
+  Provider.of<TaskData>(context, listen: false)
+      .removeTask(task),
+  Navigator.pop(context, 'OK')
+},
+
+
+ onPressed: () {
+  Provider.of<TaskData>(context, listen: false)
+      .addNewTask(Task(name: taskTitle, isDone: false));
+  Navigator.pop(context);
+},
+
+
+onPressed: () => {
+  Provider.of<TaskData>(context, listen: false)
+      .removeTask(task),
+  Navigator.pop(context, 'OK')
+},
+
+
+
+)
+
+---------------------------------------------------------
+firebase core:   firebase_core
+cloud irestore: cloud_firestore
+
+
+app: flash_chat
+Usage:
+  final _firestore = FirebaseFirestore.instance;
+  late User loggedInUser;
+
+    final _auth = FirebaseAuth.instance;
+
+  void getCurrentUser() {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        loggedInUser = user;
+        print('{loggedInUser.email}: ${loggedInUser.email}');
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+class MessageStream extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+        stream: _firestore.collection('messages').snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(
+                backgroundColor: Colors.lightBlueAccent,
+              ),
+            );
+          }
+          final List<MessageBubble> list =
+              snapshot.data!.docs.reversed.map((message) {
+            var text = message['text'];
+            var sender = message['sender'];
+            bool isMe = false;
+            if (loggedInUser != null) {
+              final currentUser = loggedInUser.email;
+              isMe = currentUser == sender;
+            }
+            var messageBubble =
+                MessageBubble(text: text, sender: sender, isMe: isMe);
+            return messageBubble;
+          }).toList();
+
+          return Expanded(
+            child: ListView(
+              reverse: true,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
+              children: list,
+            ),
+          );
+        });
+  }
+}
+
+---------------------------------------------------------
+Animated Text:  animated_text_kit
+app: flash_chat
+Usage:
+Row(
+              children: [
+                Hero(
+                  tag: 'log',
+                  child: Container(
+                    child: Image.asset('images/logo.png'),
+                    height: 60.0,
+                  ),
+                ),
+                AnimatedTextKit(
+                  animatedTexts: [
+                    TypewriterAnimatedText(
+                      'Flash Chat',
+                      textStyle: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 40.0,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      speed: const Duration(milliseconds: 500),
+                    ),
+                  ],
+                  totalRepeatCount: 4,
+                  displayFullTextOnTap: true,
+                  stopPauseOnTap: true,
+                )
+              ],
+            ),
+
+---------------------------------------------------------
+Modal progress hud:  modal_progress_hud_nsn
+app: flash_chat
+Usage:
+  bool showSpinner = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: ModalProgressHUD(
+        inAsyncCall: showSpinner,
+        child: Padding(
+
+        ),
+      ),
+    );
+  }
+
+---------------------------------------------------------
+Geolocator: geolocator
+app: clima
+Usage:
+// *********** Service
+import 'package:geolocator/geolocator.dart';
+
+// *********** Service
+class Location {
+  double latitude = 0.0;
+  double longitude = 0.0;
+
+  Future<void> getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low);
+      latitude = position.latitude;
+      longitude = position.longitude;
+    } catch (e) {
+      print(e);
+    }
+  }
+}
+
+// *********** Model:
+class WeatherModel {
+  Future<dynamic> getCityWeather(String cityName) async {
+    var url =
+        'https://samples.openweathermap.org/data/2.5/weather?q=paris&appid=2061398c1aaf3aea76467243c2f4f2f8';
+
+    NetworkHelper networkHelper = NetworkHelper(url);
+    var weatherData = await networkHelper.getData();
+    return weatherData;
+  }
+
+  Future<dynamic> getLocationWeather() async {
+    Location location = Location();
+    await location.getCurrentLocation();
+
+    NetworkHelper networkHelper = NetworkHelper(
+        '$openWeatherMapUrl?lat=${location.latitude}&lon=${location.longitude}&appid=$apiKey');
+
+    var weatherData = await networkHelper.getData();
+    return weatherData;
+  }
+}
+// *********** Location weather Consumer:
+  void getLocationData() async {
+    var weatherData = await weatherModel.getLocationWeather();
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return LocationScreen(locationWeather: weatherData);
+    }));
+  }
+
+// *********** city weather Consumer:
+ var weatherData = weatherModel.getCityWeather(typedName);
+
+---------------------------------------------------------
+A cool loading spinner: flutter_spinkit
+app: clima
+Usage:
+return const Scaffold(
+      body: Center(
+        child: SpinKitDoubleBounce(
+          color: Colors.white,
+          size: 100,
+        ),
+      ),
+    );
+
+---------------------------------------------------------
+http:  http:
+app: clima
+Usage:
+
+// *********** Service class
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class NetworkHelper {
+  final String url;
+
+  NetworkHelper(this.url);
+
+  dynamic getData() async {
+    http.Response response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      String data = response.body;
+      return jsonDecode(data);
+    } else {
+      print('{response.statusCode}: ${response.statusCode}');
+    }
+  }
+}
+
+// *********** Caller in the WeatherModel:
+ Future<dynamic> getCityWeather(String cityName) async {
+    var url =
+        'https://samples.openweathermap.org/data/2.5/weather?q=paris&appid=2061398c1aaf3aea76467243c2f4f2f8';
+
+    NetworkHelper networkHelper = NetworkHelper(url);
+    var weatherData = await networkHelper.getData();
+    return weatherData;
+  }
+
+
+---------------------------------------------------------
+Random english words: english_words
+app: first_steps
+Usage: final WordPair wordPair = WordPair.random();
+
+---------------------------------------------------------
+AudioPlayer: audioplayers
+app: xylophone_flutter
+Usage:
+void play(int number) {
+    final player = AudioCache();
+    player.play('note$number.wav');
+  }
+
+---------------------------------------------------------
+Alert dialogues:  rflutter_alert
+app: quizzler_flutter (Angela, section 10)
+Usage:
+Alert(
+              context: context,
+              title: "End of quiz",
+              desc: "You have reached the end of the quiz")
+          .show();
+
+
+---------------------------------------------------------
+Launcher icon:  flutter_launcher_icons
+app: quizzler_flutter (Angela, section 10)
+Usage:
+Alert(
+              context: context,
+              title: "End of quiz",
+              desc: "You have reached the end of the quiz")
+          .show();
+
+---------------------------------------------------------
+Date formatter :  intl
+app: personal_expenses (flutter-dart-complete-guide)
+Usage:
+'${DateFormat.yMMMd().format(tx.date)}'
+// Just pick a named constructor
+https://www.udemy.com/course/learn-flutter-dart-to-build-ios-android-apps/learn/lecture/15179244#overview
+
+     Pattern                           Result
+     ----------------                  -------
+     new DateFormat.yMd()             -> 7/10/1996
+     new DateFormat("yMd")            -> 7/10/1996
+     new DateFormat.yMMMMd("en_US")   -> July 10, 1996
+     new DateFormat.jm()              -> 5:08 PM
+     new DateFormat.yMd().add_jm()    -> 7/10/1996 5:08 PM
+     new DateFormat.Hm()              -> 17:08 // force 24 hour time
